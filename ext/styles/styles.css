@@ -1,0 +1,85 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+  background-image: url('./../resources/background.png');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #0e1e3d;
+  color: #ffffff;
+}
+
+.header, .button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  text-shadow: 5px 5px 5px rgb(14, 30, 61);
+  user-select: none;
+}
+
+.settings-icon {
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  margin-left: 10px;
+}
+
+.connect-button {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: rgba(14, 30, 61, 0.7);
+  border: 2px solid #9d9d9d;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.connect-button:hover {
+  border-color: #cccccc;
+  background-color: rgba(14, 30, 61, 0.75);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.connect-button.connected {
+  border-color: #00ff00;
+  animation: pulse_success 2s alternate; 
+}
+
+.connect-button.connecting {
+  border-color: #ffd000;
+  animation: pulse_sh 3s infinite alternate;
+}
+
+@keyframes pulse_sh {
+  0% {
+    box-shadow: 0 0 0px #ffd000;
+  }
+  50% {
+    box-shadow: 0 0 10px #ffd000;
+  }
+  100% {
+    box-shadow: 0 0 0px#ffd000;
+  }
+}
+
+@keyframes pulse_success {
+  0% {
+    box-shadow: 0 0 0px #00ff00;
+  }
+  50% {
+    box-shadow: 0 0 20px #00ff00;
+  }
+  100% {
+    box-shadow: 0 0 0px #00ff00;
+  }
+}

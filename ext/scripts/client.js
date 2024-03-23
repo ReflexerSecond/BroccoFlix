@@ -7,17 +7,21 @@ class WebSocketClient {
     }
 
     connectWebSocket() {
+        chrome.runtime.sendMessage({ action: 'status', textContent: 'reconnecting'});
         this.socket = new WebSocket(this.address);
         this.addListeners();
     }
 
     addListeners() {
         //opening and closing
-        this.socket.addEventListener('open', () => {
+        this.socket.onopen = () => {
             console.log('[BroccoliFlix] Connected');
-        });
+            chrome.runtime.sendMessage({ action: 'status', textContent: 'connected'});
+        }
+
         this.socket.onclose = () => {
             console.log('[BroccoliFlix] Connection closed!');
+
             var mh = this.socket.onmessage;
             this.socket.close();
             this.currentTimeoutId = setTimeout(() => {
@@ -43,6 +47,18 @@ class WebSocketClient {
             this.currentTimeoutId = null;
         }
         this.socket.close();
+        chrome.runtime.sendMessage({ action: 'status', textContent: 'stop'});
+    }
+
+    getStatus() {
+        if (this.socket != null && this.socket.readyState === WebSocket.OPEN) {
+            return 'connected';
+        } else { 
+            if (this.currentTimeoutId != null) 
+                return 'reconnecting';
+            else 
+                return 'stopped';
+        }
     }
 }
 
@@ -85,6 +101,10 @@ class VideoPlayerClient {
 
     stop() {
         this.client.stop();
+    }
+
+    getStatus() {
+        return this.client.getStatus();
     }
 
     addListeners() {
@@ -161,17 +181,23 @@ class VideoPlayerClient {
     }
 }
 
+
+
+
+
+
+let providedAddress = "wss://broccoliflix.space";
+//let providedAddress = "ws://localhost:3000";
+providedAddress += (window.location.pathname + window.location.search);
+
 //REZKA
 //let providedVideoElement = document.querySelector('#player video');
-//let providedBufferSpinnerElement = document.querySelector('#oframecdnplayer > pjsdiv:nth-child(15)');
+//let providedBufferSpinnerElement = document.querySelector('#oframecdnplayer > pjsdiv:nth-child(15)')
 //let providedTimelineElement = document.querySelector('#cdnplayer_control_timeline').children[0];
-
 //YOUTUBE
 let providedVideoElement = document.querySelector('.video-stream');
 let providedBufferSpinnerElement = document.querySelector('.ytp-spinner');
 let providedTimelineElement = document.querySelector('.ytp-progress-bar-container');
-
-let providedAddress = "ws://localhost:3300/default"
 
 let videoClient = new VideoPlayerClient(
     providedAddress,
@@ -179,5 +205,19 @@ let videoClient = new VideoPlayerClient(
     providedBufferSpinnerElement,
     providedTimelineElement);
 
-videoClient.start();
+//chrome.runtime.onMessage -> browser.runtime.onMessage for firefox
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  if (message.action === 'start') {
+    
 
+    videoClient.start();
+    sendResponse({ success: true });
+  } else if (message.action === 'stop') {
+    videoClient.stop();
+    sendResponse({ success: true });
+  } else if (message.action === 'status') {
+    sendResponse({ action: 'status', textContent: videoClient.getStatus()})
+  }
+});
+
+console.log('BroccoliFlix is ready!')

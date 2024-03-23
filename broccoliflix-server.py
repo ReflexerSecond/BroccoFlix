@@ -63,20 +63,28 @@ class VideoSyncServer:
                 await self.broadcast_except_sender(message, websocket)
 
     # send message to everyone
+#    async def broadcast(self, message, websocket):
+#        room = self.clients[websocket]['room']
+#        print(f"broadcast{room}:\'{message}\'")
+#        if self.clients:
+#            await asyncio.wait(
+#                [client.send(message) for client, details in self.clients.items() if details['room'] == room])
+
+    # send message to everyone
     async def broadcast(self, message, websocket):
         room = self.clients[websocket]['room']
-        print(f"broadcast{room}:\'{message}\'")
-        if self.clients:
-            await asyncio.wait(
-                [client.send(message) for client, details in self.clients.items() if details['room'] == room])
+        tasks = [client.send(message) for client, details in self.clients.items() if details['room'] == room]
+        print(f"broadcast_except_sender:{room}:\'{message}\'")
+        if tasks:
+            await asyncio.wait([asyncio.create_task(task) for task in tasks])
 
     # send message to everyone else
     async def broadcast_except_sender(self, message, websocket):
         room = self.clients[websocket]['room']
+        tasks = [client.send(message) for client, details in self.clients.items() if client != websocket and details['room'] == room]
         print(f"broadcast_except_sender:{room}:\'{message}\'")
-        if self.clients:
-            await asyncio.wait([client.send(message) for client, details in self.clients.items() if
-                                client != websocket and details['room'] == room])
+        if tasks:
+            await asyncio.wait([asyncio.create_task(task) for task in tasks])
 
     # processing for all messages
     async def video_sync(self, websocket, path):
@@ -96,13 +104,13 @@ async def main():
     server = VideoSyncServer()
     if len(sys.argv) > 1 and sys.argv[1] == '--ssl':
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        certfile_path = pathlib.Path(__file__).with_name("server.crt")
-        keyfile_path = pathlib.Path(__file__).with_name("server.key")
+        certfile_path = pathlib.Path(__file__).with_name("fullchain.crt")
+        keyfile_path = pathlib.Path(__file__).with_name("privkey.key")
         ssl_context.load_cert_chain(certfile_path, keyfile_path)
         async with websockets.serve(server.video_sync, "", 443, ssl=ssl_context):
             await asyncio.Future()
     else:
-        async with websockets.serve(server.video_sync, "", 3300):
+        async with websockets.serve(server.video_sync, "", 3000):
             await asyncio.Future()
 
 

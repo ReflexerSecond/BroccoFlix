@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "BroccoliFlix",
+  "version": "0.1",
+  "description": "Html5 video sync",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "resources/icon.png",
+      "32": "resources/icon.png",
+      "48": "resources/icon.png",
+      "128": "resources/icon.png"
+    }
+  },
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["scripts/client.js"]
+    }
+  ]
+}
