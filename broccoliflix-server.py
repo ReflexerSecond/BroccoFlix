@@ -49,10 +49,8 @@ class VideoSyncServer:
                 self.desired_state = Actions.STOP
                 await self.broadcast_except_sender(Actions.STOP, websocket)
             elif comand[0] == Actions.READY:
-                # await websocket.send(Actions.STOP)
                 # fixme: we don't stop source here, so we have a delay, but if we do
-                #  we cannot see the buffering in browser
-
+                #  we cannot see the buffering in browser (await websocket.send(Actions.STOP))
                 self.clients[websocket]['ready'] = True
                 if (self.desired_state == Actions.PLAY) and (are_all_ready()):
                     await self.broadcast(Actions.PLAY, websocket)
@@ -61,14 +59,6 @@ class VideoSyncServer:
                 self.clients[websocket]['ready'] = False
             elif comand[0] == Actions.CHANGE_TIME:
                 await self.broadcast_except_sender(message, websocket)
-
-    # send message to everyone
-#    async def broadcast(self, message, websocket):
-#        room = self.clients[websocket]['room']
-#        print(f"broadcast{room}:\'{message}\'")
-#        if self.clients:
-#            await asyncio.wait(
-#                [client.send(message) for client, details in self.clients.items() if details['room'] == room])
 
     # send message to everyone
     async def broadcast(self, message, websocket):

@@ -10,6 +10,8 @@ body {
   background-attachment: fixed;
   background-color: #0e1e3d;
   color: #ffffff;
+  width: 250px;
+  height: 300px;
 }
 
 .header, .button-container {
@@ -58,6 +60,61 @@ body {
 .connect-button.connecting {
   border-color: #ffd000;
   animation: pulse_sh 3s infinite alternate;
+}
+
+.input-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-container input {
+  background-color: rgba(14, 30, 61, 0.7);
+  border: 2px solid #9d9d9d;
+  outline: none; /* Убираем контур при фокусе */
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  color: #fff; /* Цвет текста внутри input */
+  transition: border-color 0.3s ease; /* Плавный переход для обводки */
+  font-family: Arial, sans-serif; /* Шрифт текста */
+}
+
+.input-container input::placeholder {
+  color: rgba(255, 255, 255, 0.5); /* Цвет плейсхолдера */
+  font-family: 'Roboto', sans-serif; /* Измененный шрифт для плейсхолдера */
+}
+
+.input-container input:focus {
+  border-color: #5a5a5a; /* Цвет обводки при фокусе */
+}
+
+.save-button {
+  width: 100px;
+  height: 50px;
+  border-radius: 8px;
+  background-color: rgba(14, 30, 61, 0.7);
+  border: 2px solid #9d9d9d;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #9d9d9d;
+}
+.save-button:hover {
+  border-color: #cccccc;
+  background-color: rgba(14, 30, 61, 0.75);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+}
+
+
+.hidden {
+  display: none;
 }
 
 @keyframes pulse_sh {

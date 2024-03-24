@@ -1,3 +1,17 @@
+// TODO This code is piece of shit
+//  I NEED TO REFACTOR THIS
+let browserAPI;
+// Check browser
+if (navigator.userAgent.indexOf('Chrome') !== -1) {
+    console.log("[BroccoliFlix] Chrome");
+    browserAPI = chrome;
+} else if (navigator.userAgent.indexOf('Firefox') !== -1){
+    console.log("[BroccoliFlix] Firefox");
+    browserAPI = browser;
+} else {
+    console.log("[BroccoliFlix] ! BROWSER IS NOT RECOGNIZED !")
+}
+
 class WebSocketClient {
     socket = null;
     currentTimeoutId = null;
@@ -7,7 +21,7 @@ class WebSocketClient {
     }
 
     connectWebSocket() {
-        chrome.runtime.sendMessage({ action: 'status', textContent: 'reconnecting'});
+        browserAPI.runtime.sendMessage({ action: 'status', textContent: 'reconnecting'});
         this.socket = new WebSocket(this.address);
         this.addListeners();
     }
@@ -16,7 +30,7 @@ class WebSocketClient {
         //opening and closing
         this.socket.onopen = () => {
             console.log('[BroccoliFlix] Connected');
-            chrome.runtime.sendMessage({ action: 'status', textContent: 'connected'});
+            browserAPI.runtime.sendMessage({ action: 'status', textContent: 'connected'});
         }
 
         this.socket.onclose = () => {
@@ -47,7 +61,7 @@ class WebSocketClient {
             this.currentTimeoutId = null;
         }
         this.socket.close();
-        chrome.runtime.sendMessage({ action: 'status', textContent: 'stop'});
+        browserAPI.runtime.sendMessage({ action: 'status', textContent: 'stop'});
     }
 
     getStatus() {
@@ -65,10 +79,7 @@ class WebSocketClient {
 class VideoPlayerClient {
     playHandlerEnabled = true;
 
-    constructor(socketAddress, videoElement, bufferSpinnerElement, timelineElement) {
-        this.videoElement = videoElement;
-        this.bufferSpinnerElement = bufferSpinnerElement;
-        this.timelineElement = timelineElement;
+    constructor(socketAddress) {
         this.client = new WebSocketClient(socketAddress);
         this.messageHandler = (event) => {
             const command = event.data.split(':');
@@ -95,8 +106,7 @@ class VideoPlayerClient {
 
     start() {
         this.client.connectWebSocket();
-        this.addListeners();
-        this.client.addMessageHandler(this.messageHandler);
+        this.setElements();
     }
 
     stop() {
@@ -107,20 +117,33 @@ class VideoPlayerClient {
         return this.client.getStatus();
     }
 
+    setElements() {
+        browserAPI.storage.local.get("videoSelector", (result) => {
+            browserAPI.storage.local.get("bufferRingSelector", (result2) => {
+                browserAPI.storage.local.get("timelineSelector", (result3) => {
+                    this.videoElement = document.querySelector(result["videoSelector"]);
+                    this.bufferSpinnerElement = document.querySelector(result2["bufferRingSelector"]);
+                    this.timelineElement = document.querySelector(result3["timelineSelector"]);
+                    console.log("[BroccoliFlix]\nvideoElement: " + this.videoElement +
+                        "\nbufferSpinnerElement: " + this.bufferSpinnerElement +
+                        "\ntimelineElement: "+ this.timelineElement);
+                    this.addListeners();
+                    this.client.addMessageHandler(this.messageHandler);
+                });
+            });
+        });
+    }
+
     addListeners() {
         //setup listeners for manual play/pause/change_time commands
         this.videoElement.onplay = () => {
-            //console.log(`[BroccoliFlix] onplay: ${this.playHandlerEnabled}`);
             if (this.playHandlerEnabled) {
-            this.client.send(`ready:${this.videoElement.currentTime}`);
-
-                console.log(`[BroccoliFlix] sendplay`);
+                this.client.send(`ready:${this.videoElement.currentTime}`);
                 this.client.send(`play:${this.videoElement.currentTime}`);
             }
         };
 
         this.videoElement.onpause = () => {
-            //console.log(`[BroccoliFlix] onpause:  ${this.playHandlerEnabled}`);
             if (this.playHandlerEnabled) {
                 this.client.send(`pause:${this.videoElement.currentTime}`);
             }
@@ -167,7 +190,7 @@ class VideoPlayerClient {
                 }, 100);
             }).catch(error => {
             this.playHandlerEnabled = true;
-            console.error("Error playing video:", error)
+            console.error("[BroccoliFlix] Error playing video:", error)
         });
     }
 
@@ -181,35 +204,14 @@ class VideoPlayerClient {
     }
 }
 
-
-
-
-
-
 let providedAddress = "wss://broccoliflix.space";
 //let providedAddress = "ws://localhost:3000";
 providedAddress += (window.location.pathname + window.location.search);
 
-//REZKA
-//let providedVideoElement = document.querySelector('#player video');
-//let providedBufferSpinnerElement = document.querySelector('#oframecdnplayer > pjsdiv:nth-child(15)')
-//let providedTimelineElement = document.querySelector('#cdnplayer_control_timeline').children[0];
-//YOUTUBE
-let providedVideoElement = document.querySelector('.video-stream');
-let providedBufferSpinnerElement = document.querySelector('.ytp-spinner');
-let providedTimelineElement = document.querySelector('.ytp-progress-bar-container');
+let videoClient = new VideoPlayerClient(providedAddress);
 
-let videoClient = new VideoPlayerClient(
-    providedAddress,
-    providedVideoElement,
-    providedBufferSpinnerElement,
-    providedTimelineElement);
-
-//chrome.runtime.onMessage -> browser.runtime.onMessage for firefox
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+browserAPI.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.action === 'start') {
-    
-
     videoClient.start();
     sendResponse({ success: true });
   } else if (message.action === 'stop') {
@@ -217,7 +219,10 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     sendResponse({ success: true });
   } else if (message.action === 'status') {
     sendResponse({ action: 'status', textContent: videoClient.getStatus()})
+  } else if (message.action === 'elements_load') {
+      videoClient.setElements();
+      sendResponse({ success: true });
   }
 });
 
-console.log('BroccoliFlix is ready!')
+console.log('[BroccoliFlix] BroccoliFlix is ready!')

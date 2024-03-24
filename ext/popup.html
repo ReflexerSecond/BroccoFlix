@@ -7,15 +7,25 @@
   <link rel="stylesheet" href="styles/styles.css">
 </head>
 <body>
-  <div class="header">
-    <h1>BroccoliFlix</h1>
-    <img src="resources/settings.svg" alt="Settings" class="settings-icon">
-  </div>
-
+<div class="header">
+  <h1>BroccoliFlix</h1>
+  <img id="settingsBtn" src="resources/settings.svg" alt="Settings" class="settings-icon">
+  <img id="backBtn" src="resources/goback.png" alt="Back" class="settings-icon hidden">
+</div>
+<div id="connect-page">
   <div class="button-container">
     <div class="connect-button" id="connect-button">Connect</div>
   </div>
+</div>
+<div id="settings-page" class="hidden">
+  <div class="input-container">
+    <input id="videoSelector" type="text" placeholder="Video selector">
+    <input id="timelineSelector" type="text" placeholder="Timeline selector">
+    <input id="bufferRingSelector" type="text" placeholder="Buffer ring selector">
+    <button id="saveBtn" class="save-button">Save</button>
+  </div>
 
+</div>
   <script src="scripts/script.js"></script>
 </body>
 </html>
