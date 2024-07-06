@@ -1,42 +1,42 @@
 class Utils {
-    browserApi;
+    static browserApi;
 
     constructor() {
         this.getBrowserApi();
     }
 
     getBrowserApi() {
-        if (this.browserApi === undefined) {
+        if (Utils.browserApi === undefined) {
             if (navigator.userAgent.indexOf('Chrome') !== -1) {
-                console.log("[BroccoliFlix] Browser: Chrome");
-                this.browserApi = chrome;
+                console.log("[BroccoFlix] Browser: Chrome");
+                Utils.browserApi = chrome;
             } else if (navigator.userAgent.indexOf('Firefox') !== -1){
-                console.log("[BroccoliFlix] Browser: Firefox");
-                this.browserApi = browser;
+                console.log("[BroccoFlix] Browser: Firefox");
+                Utils.browserApi = browser;
             } else {
-                console.log("[BroccoliFlix] ! BROWSER IS NOT RECOGNIZED !")
-                this.browserApi = null;
+                console.log("[BroccoFlix] ! BROWSER IS NOT RECOGNIZED !")
+                Utils.browserApi = null;
             }
         }
-        return this.browserApi;
+        return Utils.browserApi;
     }
 
-    sendMessageUsingBrowserApi(message) {
-        browserAPI.runtime.sendMessage(message);
+    sendMessageToRuntime(message) {
+        Utils.browserApi.runtime.sendMessage(message);
     }
 
     async sendMessageToActiveTab(message) {
-        await browserAPI.tabs.query({active: true, currentWindow: true}, function (tabs) {
-            browserAPI.tabs.sendMessage(tabs[0].id, message);
+        await Utils.browserApi.tabs.query({active: true, currentWindow: true}, function (tabs) {
+            Utils.browserApi.tabs.sendMessage(tabs[0].id, message);
         });
     }
 
     async writeToBase(key, value) {
         try {
             await new Promise((resolve, reject) => {
-                this.browserApi.storage.local.set({ [key]: value }, () => {
-                    if (this.browserApi.runtime.lastError) {
-                        reject(new Error(this.browserApi.runtime.lastError.message));
+                Utils.browserApi.storage.local.set({ [key]: value }, () => {
+                    if (Utils.browserApi.runtime.lastError) {
+                        reject(new Error(Utils.browserApi.runtime.lastError.message));
                     } else {
                         resolve();
                     }
@@ -51,9 +51,9 @@ class Utils {
     async readFromBase(key) {
         try {
             return await new Promise((resolve, reject) => {
-                this.browserApi.storage.local.get(key, (result) => {
-                    if (this.browserApi.runtime.lastError) {
-                        reject(new Error(this.browserApi.runtime.lastError.message));
+                Utils.browserApi.storage.local.get(key, (result) => {
+                    if (Utils.browserApi.runtime.lastError) {
+                        reject(new Error(Utils.browserApi.runtime.lastError.message));
                     } else {
                         resolve(result[key]);
                     }
@@ -81,4 +81,46 @@ class Utils {
             return defaultValue;
         }
     }
+
+    generateUniqueSelector(element) {
+        function getElementSelector(el) {
+            let selector = el.tagName.toLowerCase();
+            if (el.id) {
+                selector += `#${el.id}`;
+            } else if (el.className) {
+                selector += `.${el.className.trim().replace(/\s+/g, '.')}`;
+            }
+            return selector;
+        }
+
+        function isUnique(selector) {
+            return document.querySelectorAll(selector).length === 1;
+        }
+
+        let currentElement = element;
+        let path = [getElementSelector(currentElement)];
+
+        while (currentElement.parentElement) {
+            let selector = path.join(' > ');
+
+            if (isUnique(selector)) {
+                return selector;
+            }
+
+            let parent = currentElement.parentElement;
+            let siblings = Array.from(parent.children).filter(child => child.tagName.toLowerCase() === currentElement.tagName.toLowerCase());
+
+            if (siblings.length > 1) {
+                let index = siblings.indexOf(currentElement) + 1;
+                path.unshift(`${getElementSelector(parent)} > ${currentElement.tagName.toLowerCase()}:nth-of-type(${index})`);
+            } else {
+                path.unshift(getElementSelector(parent));
+            }
+
+            currentElement = parent;
+        }
+
+        return path.join(' > ');
+    }
+
 }

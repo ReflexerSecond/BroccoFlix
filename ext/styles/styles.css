@@ -71,22 +71,22 @@ body {
 .input-container input {
   background-color: rgba(14, 30, 61, 0.7);
   border: 2px solid #9d9d9d;
-  outline: none; /* Убираем контур при фокусе */
+  outline: none;
   padding: 10px;
   margin-bottom: 10px;
   border-radius: 8px;
-  color: #fff; /* Цвет текста внутри input */
-  transition: border-color 0.3s ease; /* Плавный переход для обводки */
-  font-family: Arial, sans-serif; /* Шрифт текста */
+  color: #fff;
+  transition: border-color 0.3s ease;
+  font-family: Arial, sans-serif;
 }
 
 .input-container input::placeholder {
   color: rgba(255, 255, 255, 0.5); /* Цвет плейсхолдера */
-  font-family: 'Roboto', sans-serif; /* Измененный шрифт для плейсхолдера */
+  font-family: 'Roboto', sans-serif;
 }
 
 .input-container input:focus {
-  border-color: #5a5a5a; /* Цвет обводки при фокусе */
+  border-color: #5a5a5a;
 }
 
 .save-button {

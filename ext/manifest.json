@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BroccoliFlix",
-  "version": "0.1",
+  "version": "0.3",
   "description": "Html5 video sync",
   "action": {
     "default_popup": "popup.html",
@@ -12,11 +12,15 @@
       "128": "resources/icon.png"
     }
   },
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "tabs"],
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["scripts/Utils.js","scripts/VideoPlayerClient.js","scripts/WebSocketClient.js","scripts/client.js"]
+      "js": [
+        "scripts/Utils.js",
+        "scripts/WebSocketClient.js",
+        "scripts/VideoPlayerClient.js",
+        "scripts/client.js"]
     }
   ]
 }
