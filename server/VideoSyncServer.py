@@ -42,16 +42,17 @@ class VideoSyncServer:
         3. Sets the role of the client to MASTER if it is the first client in the room.
         """
         self.clients[websocket] = Client(websocket, str(websocket.remote_address), None, path, None)
-
+        added_client = self.clients[websocket]
         if self.rooms.get(path) and len(self.rooms[path].get_client_list()) > 0:
             self.rooms[path].add_client(websocket)
-            self.clients[websocket].set_role(Roles.VIEWER)
+            added_client.set_role(Roles.VIEWER)
         else:
             self.rooms[path] = Room(0)
             self.rooms[path].add_client(websocket)
-            self.clients[websocket].set_role(Roles.MASTER)
+            added_client.set_role(Roles.MASTER)
 
-        logging.info(f"Client {self.clients[websocket].get_name()} connected.")
+        await self.broadcast(added_client, self.create_response_template(added_client), False)
+        logging.info(f"Client {added_client.get_name()} connected.")
 
     async def _remove_client(self, websocket):
         """
@@ -61,8 +62,11 @@ class VideoSyncServer:
         """
         client_room = self.clients[websocket].get_room()
         self.rooms[client_room].remove_client(websocket)
-        if self.clients[websocket].get_role() == Roles.MASTER:
+        removed_client = self.clients[websocket]
+
+        if removed_client.get_role() == Roles.MASTER:
             clients_in_room = self.rooms[client_room].get_client_list()
+            await self.broadcast(removed_client, self.create_response_template(removed_client), False)
             if len(clients_in_room) > 0:
                 self.clients[clients_in_room[0]].set_role(Roles.MASTER)
 
@@ -80,23 +84,19 @@ class VideoSyncServer:
         client_action = parsed_message['action']
         if client_action:
             current_client.set_time(parsed_message['video_time'])
-            response = {
-                "name": current_client.get_name(),
-                "role": current_client.get_role(),
-                "video_time": current_client.get_time(),
-                "server_time": datetime.now().isoformat(),
-                "client_list": [self.clients[socket].get_name() for socket in
-                                self.rooms[current_client.get_room()].get_client_list()]
-            }
+            response = self.create_response_template(current_client)
 
             actions = {
                 ClientActions.PING: lambda: websocket.send(json.dumps(response)),
                 ClientActions.STOP: lambda: self.broadcast(current_client, response, ClientActions.STOP, state=States.PAUSED, send_to_current_client=False),
                 ClientActions.SYNC: lambda: self.broadcast(current_client, response, ClientActions.SYNC, send_to_current_client=False),
-                ClientActions.LOAD: lambda: self.broadcast(current_client, response, ClientActions.LOAD, state=States.LOADING, send_to_current_client=False),
+                ClientActions.LOAD: lambda: self.broadcast(current_client, response, ClientActions.LOAD, state=States.LOADING, send_to_current_client=False)
             }
 
-            if client_action == ClientActions.PLAY:
+            if client_action == ClientActions.LOADED:
+                current_client.set_state(States.LOADED)
+
+            elif client_action == ClientActions.PLAY:
                 current_client.set_state(States.LOADED)
                 if self.are_all_clients_ready(current_client):
                     await self.broadcast(current_client, response, ClientActions.PLAY, state=States.PLAYING, send_to_current_client=False)
@@ -106,6 +106,16 @@ class VideoSyncServer:
                 logging.info(f"Unknown action: {parsed_message['action']}")
                 await websocket.send(json.dumps("{error: 'Unknown action'}"))
 
+    def create_response_template(self, current):
+        return {
+            "name": current.get_name(),
+            "role": current.get_role(),
+            "video_time": current.get_time(),
+            "server_time": datetime.now().isoformat(),
+            "client_list": [self.clients[socket].get_name() for socket in
+                            self.rooms[current.get_room()].get_client_list()]
+        }
+
     async def broadcast(self, current_client, response, action, state=None, send_to_current_client=True):
         """
         Broadcasts a message to all clients in the same room as the current client.
@@ -113,7 +123,8 @@ class VideoSyncServer:
 
         if state:
             current_client.set_state(state)
-        response["action"] = action
+        if action:
+            response["action"] = action
         response_dumped = json.dumps(response)
         current_client_room = current_client.get_room()
         logging.info(f"{response["name"]}, to everyone: {send_to_current_client}\nresponse: {response_dumped}")

@@ -22,8 +22,6 @@ class WebSocketClient {
     actionOnReconnect = null;
     actionOnStop = null;
     messageHandler = null;
-    serverOperationsInProgress = 0;
-    isServerOperation = false;
 
     /**
      * Adds event listeners to the WebSocket instance.

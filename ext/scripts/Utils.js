@@ -25,9 +25,9 @@ class Utils {
         Utils.browserApi.runtime.sendMessage(message);
     }
 
-    async sendMessageToActiveTab(message) {
-        await Utils.browserApi.tabs.query({active: true, currentWindow: true}, function (tabs) {
-            Utils.browserApi.tabs.sendMessage(tabs[0].id, message);
+    sendMessageToActiveTab(message, func) {
+        Utils.browserApi.tabs.query({active: true, currentWindow: true}, function (tabs) {
+            Utils.browserApi.tabs.sendMessage(tabs[0].id, message, func);
         });
     }
 
@@ -68,59 +68,18 @@ class Utils {
     async readFromBaseOrDefault(key, defaultValue) {
         try {
             const result = await utils.readFromBase(key);
-            console.log("Read " + key + ": " + result);
+            console.log(`Value of ${key}: \"${result}\"`);
             if (result && result !== "") {
                 return result;
             } else {
-                console.log("was empty");
+                console.log(`Value was empty. Using default value: ${defaultValue}`);
                 await utils.writeToBase(key, defaultValue);
                 return utils.readFromBase(key);
             }
         } catch (error) {
-            console.error("Ошибка при чтении из локального хранилища:", error);
+            console.error("Reading from the local storage failed:", error);
             return defaultValue;
         }
-    }
-
-    generateUniqueSelector(element) {
-        function getElementSelector(el) {
-            let selector = el.tagName.toLowerCase();
-            if (el.id) {
-                selector += `#${el.id}`;
-            } else if (el.className) {
-                selector += `.${el.className.trim().replace(/\s+/g, '.')}`;
-            }
-            return selector;
-        }
-
-        function isUnique(selector) {
-            return document.querySelectorAll(selector).length === 1;
-        }
-
-        let currentElement = element;
-        let path = [getElementSelector(currentElement)];
-
-        while (currentElement.parentElement) {
-            let selector = path.join(' > ');
-
-            if (isUnique(selector)) {
-                return selector;
-            }
-
-            let parent = currentElement.parentElement;
-            let siblings = Array.from(parent.children).filter(child => child.tagName.toLowerCase() === currentElement.tagName.toLowerCase());
-
-            if (siblings.length > 1) {
-                let index = siblings.indexOf(currentElement) + 1;
-                path.unshift(`${getElementSelector(parent)} > ${currentElement.tagName.toLowerCase()}:nth-of-type(${index})`);
-            } else {
-                path.unshift(getElementSelector(parent));
-            }
-
-            currentElement = parent;
-        }
-
-        return path.join(' > ');
     }
 
 }

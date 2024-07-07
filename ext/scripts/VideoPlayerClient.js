@@ -72,8 +72,8 @@ class VideoPlayerClient {
                     break;
                 }
                 case this.actionsList.PLAY: {
-                    this.serverPlay();
                     this.state = 'PLAY';
+                    this.serverPlay();
                     console.log(`[BroccoFlix] STATE CHANGED : ${this.state}`);
                     break;
                 }
@@ -122,6 +122,8 @@ class VideoPlayerClient {
     }
 
     start() {
+        //TODO should not connect if videoElement is not found
+        // or show allert
         if (this.client.actionOnConnect === null) {
             this.client.actionOnConnect = () => {
                 console.log('[BroccoFlix] ActionOnConnect');

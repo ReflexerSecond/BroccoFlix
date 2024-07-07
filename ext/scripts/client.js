@@ -14,7 +14,8 @@ const actions = {
     return { success: true };
   },
   'status': () => ({action: 'status', textContent: videoClient.getStatus()}),
-  'elements_load': () => ({success: videoClient.setElements()})
+  'elements_load': () => ({success:  this.utils.readFromBase("videoSelector").then((videoSelector) => videoClient.setVideoElement(videoSelector))}),
+  'pipette': () => (Pipette.pipetteVideoElements().then(() => ({success:  this.utils.readFromBase("videoSelector").then((videoSelector) => videoClient.setVideoElement(videoSelector))})))
 };
 
 browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {

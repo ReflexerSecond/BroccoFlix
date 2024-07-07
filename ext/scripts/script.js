@@ -8,31 +8,8 @@ const connectPage = document.getElementById('connect-page');
 const connectButton = document.getElementById('connect-button');
 let videoSelectorInput = document.getElementById('videoSelector');
 let saveBtn = document.getElementById('saveBtn');
-
-
-connectButton.addEventListener('click', function() {
-    const actionVal = (connectButton.textContent === 'Pause') ? 'stop' : 'start';
-    utils.sendMessageToActiveTab({ action: actionVal.toString() });
-});
-
-function changeButton(state) {
-  const classes = ['connected', 'connecting'];
-  connectButton.classList.remove(...classes);
-
-  switch (state) {
-      case 'stop':
-          connectButton.textContent = 'Connect';
-          break;
-      case 'reconnecting':
-          connectButton.textContent = 'Pause';
-          connectButton.classList.add('connecting');
-          break;
-      case 'connected':
-          connectButton.textContent = 'Pause';
-          connectButton.classList.add('connected');
-          break;
-  }
-}
+let pipetteBtn = document.getElementById('pipetteBtn');
+let currentStatus = "stop";
 
 backBtn.onclick = () => {
     backBtn.classList.add('hidden');
@@ -46,37 +23,61 @@ settingsBtn.onclick = () => {
     settingsPage.classList.remove('hidden');
     settingsBtn.classList.add('hidden');
     connectPage.classList.add('hidden');
+    utils.readFromBaseOrDefault("videoSelector", ".video-stream").then(x=> videoSelectorInput.value = x);
+}
+
+saveBtn.onclick = async () => {
+    await utils.writeToBase("videoSelector", videoSelectorInput.value);
+    utils.sendMessageToActiveTab({action: 'elements_load'}, ()=>{});
+}
+
+pipetteBtn.onclick = () => {
+    utils.sendMessageToActiveTab({action: 'pipette'}, ()=>{});
 }
 
 
-browserAPI.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+//Connection button logic
+/**
+ * When popup opens we need to ask for a status from client to know which button we need to show
+ * */
+utils.sendMessageToActiveTab({ action: 'status' }, (response)=> changeButton(response.textContent));
+
+/**
+ * When connection button is clicked - it should send action 'stop' or start from popup
+ * to the active page
+ * */
+connectButton.addEventListener('click', function() {
+    const actionVal = (connectButton.textContent === 'Pause') ? 'stop' : 'start';
+    utils.sendMessageToActiveTab({ action: actionVal.toString() });
+});
+
+
+
+browserAPI.runtime.onMessage.addListener(function(message, sender) {
     if (message.action === 'status') {
         browserAPI.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-            const activeTabId = tabs[0].id;
-            if (sender.tab.id === activeTabId) {
-                changeButton(message.textContent);
-            }
+            if (sender.tab.id === tabs[0].id)
+                currentStatus = message.textContent;
+                changeButton(currentStatus);
         });
     }
 });
 
-async function takeValues() {
-    videoSelectorInput.value = await utils.readFromBaseOrDefault("videoSelector", ".video-stream");
+function changeButton(state) {
+    const classes = ['connected', 'connecting'];
+    connectButton.classList.remove(...classes);
+
+    switch (state) {
+        case 'stop':
+            connectButton.textContent = 'Connect';
+            break;
+        case 'reconnecting':
+            connectButton.textContent = 'Pause';
+            connectButton.classList.add('connecting');
+            break;
+        case 'connected':
+            connectButton.textContent = 'Pause';
+            connectButton.classList.add('connected');
+            break;
+    }
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    browserAPI.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    const tabId = tabs[0].id;
-    browserAPI.tabs.sendMessage(tabId, { action: 'status' }, function(response) {
-      changeButton(response.textContent);
-    });
-
-    takeValues().then(() => {
-            saveBtn.onclick = async () => {
-                await utils.writeToBase("videoSelector", videoSelectorInput.value);
-                await this.utils.sendMessageToActiveTab({action: 'elements_load'});
-            }
-        }
-    );
-  });
-});

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BroccoliFlix",
-  "version": "0.3",
+  "version": "0.4",
   "description": "Html5 video sync",
   "action": {
     "default_popup": "popup.html",
@@ -18,6 +18,8 @@
       "matches": ["*://*/*"],
       "js": [
         "scripts/Utils.js",
+        "scripts/utils/Pipette.js",
+        "scripts/utils/SelectorManager.js",
         "scripts/WebSocketClient.js",
         "scripts/VideoPlayerClient.js",
         "scripts/client.js"]

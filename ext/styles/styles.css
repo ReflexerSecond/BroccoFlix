@@ -81,7 +81,7 @@ body {
 }
 
 .input-container input::placeholder {
-  color: rgba(255, 255, 255, 0.5); /* Цвет плейсхолдера */
+  color: rgba(255, 255, 255, 0.5);
   font-family: 'Roboto', sans-serif;
 }
 
@@ -90,20 +90,20 @@ body {
 }
 
 .save-button {
-  width: 100px;
+  width: 80px;
   height: 50px;
   border-radius: 8px;
   background-color: rgba(14, 30, 61, 0.7);
   border: 2px solid #9d9d9d;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
-  display: flex;
   justify-content: center;
-  align-items: center;
+  margin-top: 30px;
+  align-items: center ;
   font-size: 16px;
   font-weight: bold;
   text-transform: uppercase;
-  color: #9d9d9d;
+  color: #c8c8c8;
 }
 .save-button:hover {
   border-color: #cccccc;
