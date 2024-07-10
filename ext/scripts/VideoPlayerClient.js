@@ -15,6 +15,7 @@ class VideoPlayerClient {
     };
 
     constructor(socketAddress) {
+        this.lastAction = Promise.resolve();
         this.utils = new Utils();
         this.client = new WebSocketClient(socketAddress, null, null, null);
     }
@@ -26,27 +27,29 @@ class VideoPlayerClient {
     }
 
     addListeners() {
-        const events = ['play', 'pause', 'seeked', 'waiting', 'canplay'];
-        const actions =['PLAY', 'STOP', 'SYNC', 'LOAD', 'LOAD_END'];
+        const events = ['play', 'pause', /*'seeked',*/ 'waiting', 'canplay'];
+        const actions =['PLAY', 'STOP', /*'SYNC',*/ 'LOAD', 'LOADED'];
         console.log(`[BroccoFlix] Adding listeners to video element`);
         console.log(this.videoElement);
 
         for (let i = 0; i < events.length; i++) {
             this.videoElement[`on${events[i]}`] = () => {
+                console.log(`[BroccoFlix] on${events[i]} - start`);
                 let action = actions[i];
 
                 if (action === 'STOP' || action === 'PLAY') {
+                    this.serverStop();
                     this.state = action;
-                    console.log(`[BroccoFlix] STATE CHANGED : ${this.state}`);
                 }
+                if (action === 'LOADED') {
+                    this.serverStop();
 
-                if (action === 'LOAD_END') {
-                    action = this.state === 'STOP' ? 'LOADED' : 'PLAY';
                 }
 
                 console.log(`[BroccoFlix] LOCAL: ${events[i]} - ${action}`);
 
                 this.client.sendMessageToServer({"video_time": this.videoElement.currentTime, "action": action});
+                console.log(`[BroccoFlix] on${events[i]} - end`);
             }
 
             this.tempPlayFunc = this.videoElement.onplay;
@@ -73,20 +76,26 @@ class VideoPlayerClient {
                 }
                 case this.actionsList.PLAY: {
                     this.state = 'PLAY';
-                    this.serverPlay();
                     console.log(`[BroccoFlix] STATE CHANGED : ${this.state}`);
+                    if (message.video_time !== this.videoElement.currentTime) {
+                        this.addActionToQueue(videoClient.serverStop);
+                        this.videoElement.currentTime = message.video_time;
+                    } else {
+                        this.addActionToQueue(this.serverPlay);
+                    }
                     break;
                 }
                 case this.actionsList.STOP:
                     this.state = 'STOP';
                     console.log(`[BroccoFlix] STATE CHANGED : ${this.state}`);
                 case this.actionsList.LOAD: {
-                    this.serverStop();
+                    this.addActionToQueue(videoClient.serverStop);
                     break;
                 }
                 case this.actionsList.SYNC: {
-                    this.serverStop();
-                    this.serverTimeChange(message.video_time);
+                    console.log(`[BroccoFlix] SYNC recieved!`);
+                    this.addActionToQueue(videoClient.serverStop);
+                    this.addActionToQueue(videoClient.serverTimeChange, message.video_time);
                     break;
                 }
             }
@@ -94,36 +103,38 @@ class VideoPlayerClient {
     }
 
     serverStop() {
-        if(!this.videoElement.paused) {
-            this.videoElement.onpause = () => {
+        if(!videoClient.videoElement.paused) {
+            videoClient.videoElement.onpause = () => {
                 console.log(`[BroccoFlix] SERVER : PAUSE`);
-                this.videoElement.onpause = this.tempPauseFunc;
+                videoClient.videoElement.onpause = videoClient.tempPauseFunc;
             };
-            this.videoElement.pause();
+            videoClient.videoElement.pause();
         }
     }
 
     serverTimeChange(time) {
-        this.videoElement.onseeked = () => {
-            console.log(`[BroccoFlix] SERVER CHANGE_TIME`);
-            this.videoElement.onseeked = this.tempSeekedFunc;
+        console.log(`[BroccoFlix] Trying to change time - start`);
+        videoClient.videoElement.onplay = () => {
+            console.log(`[BroccoFlix] SERVER : timeupdate PLAY`);
+            videoClient.videoElement.onplay = videoClient.tempPlayFunc;
         };
-        this.videoElement.currentTime = time;
+        videoClient.videoElement.currentTime = time;
+        console.log(`[BroccoFlix] Trying to change time - end`);
     }
 
     serverPlay() {
-        if(this.videoElement.paused) {
-            this.videoElement.onplay = () => {
+        if(videoClient.videoElement.paused) {
+            videoClient.videoElement.onplay = () => {
                 console.log(`[BroccoFlix] SERVER : PLAY`);
-                this.videoElement.onplay = this.tempPlayFunc;
+                videoClient.videoElement.onplay = videoClient.tempPlayFunc;
             };
-            this.videoElement.play();
+            videoClient.videoElement.play();
         }
     }
 
     start() {
         //TODO should not connect if videoElement is not found
-        // or show allert
+        // or show alert
         if (this.client.actionOnConnect === null) {
             this.client.actionOnConnect = () => {
                 console.log('[BroccoFlix] ActionOnConnect');
@@ -148,6 +159,7 @@ class VideoPlayerClient {
     }
 
     stop() {
+        //TODO - need to remove listeners
         this.client.stopListen();
     }
 
@@ -155,5 +167,18 @@ class VideoPlayerClient {
         this.sender = (sender ? sender : this.sender);
         // TODO status should be returned to the sender only
         return this.client.getConnectionStatus();
+    }
+
+    addActionToQueue(action, ...args) {
+        this.lastAction = this.lastAction.then(() => {
+            const result = action(...args);
+            if (result instanceof Promise) {
+                return result;
+            }
+            return Promise.resolve(result);
+        }).catch(err => {
+            console.error('Action failed:', err);
+        });
+        return this.lastAction;
     }
 }

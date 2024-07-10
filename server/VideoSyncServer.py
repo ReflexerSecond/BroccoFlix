@@ -88,15 +88,20 @@ class VideoSyncServer:
 
             actions = {
                 ClientActions.PING: lambda: websocket.send(json.dumps(response)),
-                ClientActions.STOP: lambda: self.broadcast(current_client, response, ClientActions.STOP, state=States.PAUSED, send_to_current_client=False),
                 ClientActions.SYNC: lambda: self.broadcast(current_client, response, ClientActions.SYNC, send_to_current_client=False),
                 ClientActions.LOAD: lambda: self.broadcast(current_client, response, ClientActions.LOAD, state=States.LOADING, send_to_current_client=False)
             }
 
             if client_action == ClientActions.LOADED:
                 current_client.set_state(States.LOADED)
-
+                if self.rooms[current_client.get_room()].get_state() == States.PLAYING:
+                    if self.are_all_clients_ready(current_client):
+                        await self.broadcast(current_client, response, ClientActions.PLAY, state=States.PLAYING, send_to_current_client=True)
+            elif client_action == ClientActions.STOP:
+                self.rooms[current_client.get_room()].set_state(States.PAUSED)
+                await self.broadcast(current_client, response, ClientActions.STOP, state=States.PAUSED, send_to_current_client=False)
             elif client_action == ClientActions.PLAY:
+                self.rooms[current_client.get_room()].set_state(States.PLAYING)
                 current_client.set_state(States.LOADED)
                 if self.are_all_clients_ready(current_client):
                     await self.broadcast(current_client, response, ClientActions.PLAY, state=States.PLAYING, send_to_current_client=False)

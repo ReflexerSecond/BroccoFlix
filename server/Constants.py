@@ -86,7 +86,7 @@ class Room:
     def __init__(self, time):
         self._client_list = []
         self._time = time
-        self._state = time
+        self._state = States.PAUSED
 
     def get_client_list(self):
         return self._client_list
@@ -99,3 +99,9 @@ class Room:
 
     def get_time(self):
         return self._time
+
+    def get_state(self):
+        return self._state
+
+    def set_state(self, state):
+        self._state = state
