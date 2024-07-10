@@ -6,7 +6,7 @@ import sys
 
 import websockets
 
-from server.VideoSyncServer import VideoSyncServer
+from VideoSyncServer import VideoSyncServer
 
 logging.basicConfig(level=logging.INFO)
 

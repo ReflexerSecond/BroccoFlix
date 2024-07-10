@@ -6,7 +6,7 @@ from datetime import datetime
 
 import websockets
 
-from server.Constants import Client, Roles, Room, ClientActions, States
+from Constants import Client, Roles, Room, ClientActions, States
 
 
 class VideoSyncServer:

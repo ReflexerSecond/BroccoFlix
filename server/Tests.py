@@ -2,8 +2,8 @@ import json
 import unittest
 from unittest.mock import AsyncMock
 
-from server.Constants import ClientActions, States, Roles
-from server.VideoSyncServer import VideoSyncServer
+from Constants import ClientActions, States, Roles
+from VideoSyncServer import VideoSyncServer
 
 
 class TestVideoSyncServer(unittest.IsolatedAsyncioTestCase):
