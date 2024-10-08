@@ -1,7 +1,11 @@
 let utils = new Utils();
 let browserAPI = utils.getBrowserApi();
-let providedAddress = "ws://localhost:3000" + (window.location.pathname + window.location.search); //for debugging
-//let providedAddress = "wss://broccoliflix.space" + (window.location.pathname + window.location.search);
+//TODO to refactor start
+let yourDomainName = "localhost:80";
+let isSecured = yourDomainName !== "localhost:80";
+
+let providedAddress = ((isSecured)? "wss" : "ws") + "://" + yourDomainName + (window.location.pathname + window.location.search);
+//TODO to refactor stop
 let videoClient = new VideoPlayerClient(providedAddress);
 
 const actions = {
@@ -29,7 +33,7 @@ browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
 console.log('[BroccoliFlix] BroccoliFlix is ready!')
 
 // YOU CAN'T ESCAPE YOUR FATE
-if (Math.floor(Math.random() * 100) === 0) {
+if (Math.floor(Math.random() * 10000) === 0) {
   let replacementImageUrl = "https://www.film.ru/sites/default/files/filefield_paths/ubyyv4f.jpg";
   let images;
   setInterval(() => {

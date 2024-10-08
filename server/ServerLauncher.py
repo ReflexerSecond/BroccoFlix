@@ -32,7 +32,7 @@ async def _start_server(server, use_ssl):
         use_ssl (bool): Whether to use SSL for the server.
     """
     ssl_context = _create_ssl_context() if use_ssl else None
-    port = 443 if use_ssl else 3000
+    port = 443 if use_ssl else 80
     async with websockets.serve(server.process_connection, "", port, ssl=ssl_context):
         await asyncio.Future()
 

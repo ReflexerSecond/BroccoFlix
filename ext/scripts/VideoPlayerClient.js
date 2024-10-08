@@ -41,9 +41,8 @@ class VideoPlayerClient {
                     this.serverStop();
                     this.state = action;
                 }
-                if (action === 'LOADED') {
+                if (action === 'LOAD') {
                     this.serverStop();
-
                 }
 
                 console.log(`[BroccoFlix] LOCAL: ${events[i]} - ${action}`);
